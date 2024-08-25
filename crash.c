@@ -5,7 +5,7 @@
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
 
-// this symbol overrides vkGetInstanceProcAddr's lookup
+// this symbol overrides vkGetInstanceProcAddr's lookup. notice how if you comment out this line then the program doesn't crash
 PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion = NULL;
 
 int main() {
@@ -18,14 +18,9 @@ int main() {
     assert(fp_vkEnumerateInstanceVersion != NULL);
     uint32_t version;
 
-    // for some reason, the symbol above overrides vkGetInstanceProcAddr's lookup
-    printf("%p = %p?\n", fp_vkEnumerateInstanceVersion, &vkEnumerateInstanceVersion);
-
     // this line causes the seg fault because vkEnumerateInstanceVersion ends up being a pointer to the global variable above
     VkResult res = fp_vkEnumerateInstanceVersion(&version);
 
     assert(res == VK_SUCCESS);
     printf("Vulkan instance version %d\n", version);
-    void* p = vkEnumerateInstanceVersion;
-    printf("%p\n", p);
 }
