@@ -5,20 +5,8 @@
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
 
+// this symbol overrides vkGetInstanceProcAddr's lookup
 PFN_vkEnumerateInstanceVersion vkEnumerateInstanceVersion = NULL;
-
-void calc_VK_API_VERSION(uint32_t version, char* out_memory, uint32_t out_len) {
-    assert(out_len >= 64);
-    uint32_t variant = VK_API_VERSION_VARIANT(version);
-    uint32_t major = VK_API_VERSION_MAJOR(version);
-    uint32_t minor = VK_API_VERSION_MINOR(version);
-    uint32_t patch = VK_API_VERSION_PATCH(version);
-    if (variant != 0) {
-        snprintf(out_memory, out_len, "Variant %u: %u.%u.%u", variant, major, minor, patch);
-    } else {
-        snprintf(out_memory, out_len, "%u.%u.%u", major, minor, patch);
-    }
-}
 
 int main() {
     void* vulkan_handle = dlopen("libvulkan.so", RTLD_LAZY);
@@ -29,11 +17,15 @@ int main() {
         (PFN_vkEnumerateInstanceVersion) fp_vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkEnumerateInstanceVersion");
     assert(fp_vkEnumerateInstanceVersion != NULL);
     uint32_t version;
+
+    // for some reason, the symbol above overrides vkGetInstanceProcAddr's lookup
+    printf("%p = %p?\n", fp_vkEnumerateInstanceVersion, &vkEnumerateInstanceVersion);
+
+    // this line causes the seg fault because vkEnumerateInstanceVersion ends up being a pointer to the global variable above
     VkResult res = fp_vkEnumerateInstanceVersion(&version);
+
     assert(res == VK_SUCCESS);
-    char vk_api_version[64];
-    calc_VK_API_VERSION(version, vk_api_version, 64);
-    printf("Vulkan instance version %s\n", vk_api_version);
+    printf("Vulkan instance version %d\n", version);
     void* p = vkEnumerateInstanceVersion;
     printf("%p\n", p);
 }
